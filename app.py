@@ -26,7 +26,7 @@ os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 # Streamlit Interface
 st.title("📄 Conversational RAG")
 st.write("💬 Ask questions about the uploaded PDF")
-st.info("Please note that the app is currently under development. Apologies any bugs or issues.")
+st.info("Please note that the app is currently under development. Apologies for any bugs or issues.")
 
 # Error Handling for API Key
 if not groq_api_key:
