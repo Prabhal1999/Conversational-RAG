@@ -26,7 +26,7 @@ os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 # Streamlit Interface
 st.title("📄 Conversational RAG")
 st.write("💬 Ask questions about the uploaded PDF")
-st.info("Please note that the app is currently under development. Please report any bugs or issues.")
+st.info("Please note that the app is currently under development. Apologies any bugs or issues.")
 
 # Error Handling for API Key
 if not groq_api_key:
@@ -49,7 +49,7 @@ if "chat_history" not in st.session_state:
 # Clear Cache Button
 if st.button("🧹 Clear Cache"):
     st.session_state.clear() 
-    st.experimental_rerun()  
+    st.toast("Cache cleared! Upload a new PDF.", icon="✅")
 
 # Get Embeddings
 @st.cache_resource
