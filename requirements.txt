@@ -7,3 +7,6 @@ langchain-huggingface
 langchain-groq
 faiss-cpu
 pypdf
+sentence-transformers
+transformers
+huggingface-hub
