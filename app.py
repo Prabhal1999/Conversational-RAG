@@ -5,7 +5,7 @@ import concurrent.futures
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
@@ -21,7 +21,9 @@ from langchain_huggingface import HuggingFaceEmbeddings
 load_dotenv()
 
 groq_api_key = os.getenv("GROQ_API_KEY")
-os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
+hf_token = os.getenv("HF_TOKEN")
+if hf_token:
+    os.environ["HF_TOKEN"] = hf_token
 
 # Streamlit Interface
 st.title("📄 Conversational RAG")
