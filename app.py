@@ -5,7 +5,7 @@ import concurrent.futures
 
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain.vectorstores import FAISS
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
@@ -21,9 +21,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 load_dotenv()
 
 groq_api_key = os.getenv("GROQ_API_KEY")
-hf_token = os.getenv("HF_TOKEN")
-if hf_token:
-    os.environ["HF_TOKEN"] = hf_token
+os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 
 # Streamlit Interface
 st.title("📄 Conversational RAG")
@@ -32,16 +30,16 @@ st.info("Please note that the app is currently under development. Apologies for 
 
 # Error Handling for API Key
 if not groq_api_key:
-    st.error("⚠️ API keys are missing from the environment.")
+    st.error("API keys are missing from the environment.")
     st.stop()
 
 # Initialize LLM Model
 llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama3-70b-8192")
 
 # Session ID Input
-session_id = st.text_input("🆔 Enter Session ID")
+session_id = st.text_input("Enter Session ID")
 
-# Ensure session storage for chat history
+# Session storage for chat history
 if "store" not in st.session_state:
     st.session_state.store = {}
 
@@ -49,19 +47,35 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = ChatMessageHistory()
 
 # Clear Cache Button
-if st.button("🧹 Clear Cache"):
+if st.button("Clear Cache"):
     st.session_state.clear() 
     st.toast("Cache cleared! Upload a new PDF.", icon="✅")
 
 # Get Embeddings
 @st.cache_resource
 def get_embeddings():
-    return HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+    hf_token = os.getenv("HF_TOKEN")
+    if not hf_token:
+        st.error("Hugging Face token is missing from environment variables.")
+        st.stop()
+    try:
+        return HuggingFaceEmbeddings(
+            model_name="BAAI/bge-large-en-v1.5",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True}
+        )
+    except Exception as e:
+        st.warning(f"Large model failed to load: {e}. Falling back to smaller model.")
+        return HuggingFaceEmbeddings(
+            model_name="BAAI/bge-small-en-v1.5",
+            model_kwargs={"device": "cpu"},
+            encode_kwargs={"normalize_embeddings": True}
+        )
 
 embeddings = get_embeddings()
 
 # File Upload
-uploaded_files = st.file_uploader("📂 Upload PDF files", type="pdf", accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
     # Reset vector store and chat history when a new PDF is uploaded
@@ -165,5 +179,4 @@ if retriever:
         st.write("📝 **Chats:**")
         for msg in session_history.messages:
             st.write(f"{msg.type.capitalize()}: {msg.content}")
-
 
