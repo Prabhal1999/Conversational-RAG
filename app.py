@@ -54,7 +54,7 @@ if st.button("🧹 Clear Cache"):
 # Get Embeddings
 @st.cache_resource
 def get_embeddings():
-    return HuggingFaceEmbeddings(model_name="BAAI/bge-large-en-v1.5")
+    return HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
 
 embeddings = get_embeddings()
 
@@ -163,5 +163,6 @@ if retriever:
         st.write("📝 **Chats:**")
         for msg in session_history.messages:
             st.write(f"{msg.type.capitalize()}: {msg.content}")
+
 
 
