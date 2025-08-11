@@ -21,23 +21,22 @@ from langchain_huggingface import HuggingFaceEmbeddings
 load_dotenv()
 
 groq_api_key = os.getenv("GROQ_API_KEY")
-os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 
 # Streamlit Interface
-st.title("📄 Conversational RAG")
-st.write("💬 Ask questions about the uploaded PDF")
-st.info("Please note that the app is currently under development. Apologies for any bugs or issues.")
+st.title("Conversational RAG")
+st.write("Ask questions about the uploaded PDF")
+st.info("Please note that the app is currently under development")
 
 # Error Handling for API Key
 if not groq_api_key:
-    st.error("⚠️ API keys are missing from the environment.")
+    st.error("API key GROQ_API_KEY is missing from the environment.")
     st.stop()
 
 # Initialize LLM Model
-llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama3-70b-8192")
+llm = ChatGroq(groq_api_key=groq_api_key, model_name="gpt-oss-20b")
 
 # Session ID Input
-session_id = st.text_input("🆔 Enter Session ID")
+session_id = st.text_input("Enter Session ID")
 
 # Ensure session storage for chat history
 if "store" not in st.session_state:
@@ -47,43 +46,57 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = ChatMessageHistory()
 
 # Clear Cache Button
-if st.button("🧹 Clear Cache"):
-    st.session_state.clear() 
-    st.toast("Cache cleared! Upload a new PDF.", icon="✅")
+if st.button("Clear Cache"):
+    # Clear the session state completely
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    st.success("Cache cleared. Upload a new PDF.")
 
 # Get Embeddings
 @st.cache_resource
 def get_embeddings():
-    return HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True}
+    )
 
 embeddings = get_embeddings()
 
 # File Upload
-uploaded_files = st.file_uploader("📂 Upload PDF files", type="pdf", accept_multiple_files=True)
+uploaded_files = st.file_uploader("Upload PDF files", type="pdf", accept_multiple_files=True)
 
 if uploaded_files:
     # Reset vector store and chat history when a new PDF is uploaded
     st.session_state["vectorstore"] = None
     st.session_state["chat_history"] = ChatMessageHistory()
 
-    documents = []  
+    documents = []
 
     def process_pdf(file):
-        temp_pdf = f"./temp_{file.name}.pdf"
+        temp_pdf = f"./temp_{file.name}"
         with open(temp_pdf, "wb") as f:
             f.write(file.getvalue())
-        return PyPDFLoader(temp_pdf).load()
+        loader = PyPDFLoader(temp_pdf)
+        loaded = loader.load()
+        try:
+            os.remove(temp_pdf)
+        except Exception:
+            pass
+        return loaded
 
+    # Load PDFs in parallel
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = list(executor.map(process_pdf, uploaded_files))
 
     for doc_list in results:
-        documents.extend(doc_list)  
+        documents.extend(doc_list)
 
+    # Split documents into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=5000, chunk_overlap=500)
     splits = text_splitter.split_documents(documents)
 
-    # Store a fresh FAISS vector store in session state
+    # Create FAISS vector store and store retriever in session
     st.session_state["vectorstore"] = FAISS.from_texts(
         [doc.page_content for doc in splits], embeddings
     ).as_retriever()
@@ -149,20 +162,18 @@ if retriever:
     )
 
     # Chat Input
-    user_input = st.chat_input("✍️ Ask something about the PDF")
+    user_input = st.chat_input("Ask something about the PDF")
 
     if user_input:
-        with st.spinner("🤔 Wait! Let me figure it out..."):
+        with st.spinner("Processing..."):
             session_history = get_session_history(session_id)
+            # invoke the chain with configurable session id
             response = conversational_rag_chain.invoke(
                 {"input": user_input},
                 {"configurable": {"session_id": session_id}}
             )
 
         # Display Chat
-        st.write("📝 **Chats:**")
+        st.write("Chats:")
         for msg in session_history.messages:
             st.write(f"{msg.type.capitalize()}: {msg.content}")
-
-
-
