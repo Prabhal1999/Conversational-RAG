@@ -3,10 +3,10 @@ python-dotenv
 langchain
 langchain-community
 langchain-core
-langchain-huggingface
 langchain-groq
+langchain-huggingface
+huggingface-hub
+transformers
+sentence-transformers
 faiss-cpu
 pypdf
-sentence-transformers
-transformers
-huggingface-hub
