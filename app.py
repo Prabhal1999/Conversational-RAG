@@ -33,7 +33,7 @@ if not groq_api_key:
     st.stop()
 
 # Initialize LLM Model
-llm = ChatGroq(groq_api_key=groq_api_key, model_name="gpt-oss-20b")
+llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama-3.3-70b-versatile")
 
 # Session ID Input
 session_id = st.text_input("Enter Session ID")
@@ -177,3 +177,4 @@ if retriever:
         st.write("Chats:")
         for msg in session_history.messages:
             st.write(f"{msg.type.capitalize()}: {msg.content}")
+
