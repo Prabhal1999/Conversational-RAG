@@ -21,11 +21,10 @@ from langchain_huggingface import HuggingFaceEmbeddings
 load_dotenv()
 
 groq_api_key = os.getenv("GROQ_API_KEY")
-os.environ["HF_TOKEN"] = os.getenv("HF_TOKEN")
 
 # Streamlit Interface
-st.title("📄 Conversational RAG")
-st.write("💬 Ask questions about the uploaded PDF")
+st.title("Conversational RAG")
+st.write("Ask questions about the uploaded PDF")
 st.info("Please note that the app is currently under development. Apologies for any bugs or issues.")
 
 # Error Handling for API Key
@@ -39,7 +38,7 @@ llm = ChatGroq(groq_api_key=groq_api_key, model_name="llama3-70b-8192")
 # Session ID Input
 session_id = st.text_input("Enter Session ID")
 
-# Session storage for chat history
+# Ensure session storage for chat history
 if "store" not in st.session_state:
     st.session_state.store = {}
 
@@ -54,23 +53,11 @@ if st.button("Clear Cache"):
 # Get Embeddings
 @st.cache_resource
 def get_embeddings():
-    hf_token = os.getenv("HF_TOKEN")
-    if not hf_token:
-        st.error("Hugging Face token is missing from environment variables.")
-        st.stop()
-    try:
-        return HuggingFaceEmbeddings(
-            model_name="BAAI/bge-large-en-v1.5",
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True}
-        )
-    except Exception as e:
-        st.warning(f"Large model failed to load: {e}. Falling back to smaller model.")
-        return HuggingFaceEmbeddings(
-            model_name="BAAI/bge-small-en-v1.5",
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True}
-        )
+    return HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True}
+    )
 
 embeddings = get_embeddings()
 
@@ -165,10 +152,10 @@ if retriever:
     )
 
     # Chat Input
-    user_input = st.chat_input("✍️ Ask something about the PDF")
+    user_input = st.chat_input("Ask something about the PDF")
 
     if user_input:
-        with st.spinner("🤔 Wait! Let me figure it out..."):
+        with st.spinner("Wait! Let me figure it out..."):
             session_history = get_session_history(session_id)
             response = conversational_rag_chain.invoke(
                 {"input": user_input},
@@ -176,7 +163,6 @@ if retriever:
             )
 
         # Display Chat
-        st.write("📝 **Chats:**")
+        st.write("**Chats:**")
         for msg in session_history.messages:
             st.write(f"{msg.type.capitalize()}: {msg.content}")
-
