@@ -3,7 +3,8 @@ python-dotenv
 langchain
 langchain-community
 langchain-core
-langchain-huggingface
 langchain-groq
+langchain-huggingface
+huggingface-hub
 faiss-cpu
 pypdf
